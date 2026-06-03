@@ -1,2 +1,2 @@
-# My-interpreter
-My own Interpreter
+# My-Compiler
+My own compiler made in c
