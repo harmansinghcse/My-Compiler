@@ -1,2 +1,3 @@
 # My-Compiler
-My own compiler made in c
+
+My own compiler made in java
