@@ -152,7 +152,7 @@ class Scanner {
             return false;
         }
         if (source.charAt(current) != expected) return false;
-        current ++;
+        current++;
         return true;
     }
 
