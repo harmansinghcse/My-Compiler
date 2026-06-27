@@ -1,6 +1,7 @@
 package com.craftinginterpreters.lox;
 
 import java.util.List;
+import java.util.ArrayList;
 import static com.craftinginterpreters.lox.TokenType.*;
 
 class Parser {
@@ -16,12 +17,13 @@ class Parser {
         this.tokens = tokens;
     }
 
-    Expr parse() {
-        try{
-            return expression();
-        } catch(ParseError error){
-            return null;
+    List<Stmt> parse() {
+        List<Stmt> statements = new ArrayList<>();
+        while(!isAtEnd()) {
+            statements.add(declaration());
         }
+        return statements;
+
     }
 
     private Expr equality() {
@@ -91,6 +93,9 @@ class Parser {
         if(match(NUMBER, STRING)) {
             return new Expr.Literal(previous().literal);
         }
+        if(match(IDENTIFIER)) {
+            return new Expr.Variable(previous());
+        }
         if(match(LEFT_PAREN)) {
             Expr expr = expression();
             consume(RIGHT_PAREN, "Except ')' after expression.");
@@ -102,6 +107,48 @@ class Parser {
 
     private Expr expression() {
         return equality();
+    }
+
+    private Stmt declaration() {
+        try{
+            if(match(VAR)) return varDeclaration();
+
+            return statement();
+        } catch (ParseError error) {
+            synchornize();
+            return null;
+        }
+
+    }
+
+    private Stmt statement() {
+        if(match(PRINT)) return printStatement();
+
+        return expressionStatement();
+    }
+
+    private Stmt printStatement() {
+        Expr value = expression();
+        consume(SEMICOLON, "Expect ';' after value.");
+        return new Stmt.Print(value);
+    }
+
+    private Stmt varDeclaration() {
+        Token name = consume(IDENTIFIER, "Expect variable name.");
+
+        Expr initializer = null;
+        if(match(EQUAL)) {
+            initializer = expression();
+        }
+
+        consume(SEMICOLON, "Expect ';' after variable declaration.");
+        return new Stmt.Var(name, initializer);
+    }
+
+    private Stmt expressionStatement() {
+        Expr expr = expression();
+        consume(SEMICOLON, "Expext ';' after expression.");
+        return new Stmt.Expression(expr);
     }
 
     private boolean match(TokenType... types) {
@@ -147,24 +194,24 @@ class Parser {
         return new ParseError();
     }
 
-    // private void synchornize() {
-    //         advance();
+    private void synchornize() {
+            advance();
 
-    //         while(!isAtEnd()) {
-    //             if(previous().type == SEMICOLON) return;
+            while(!isAtEnd()) {
+                if(previous().type == SEMICOLON) return;
 
-    //             switch (peek().type) {
-    //                 case CLASS:
-    //                 case FUN:
-    //                 case VAR:
-    //                 case FOR:
-    //                 case IF:
-    //                 case WHILE:
-    //                 case PRINT:
-    //                 case RETURN:
-    //                     return;
-    //             }
-    //             advance();
-    //         }
-    //     }
+                switch (peek().type) {
+                    case CLASS:
+                    case FUN:
+                    case VAR:
+                    case FOR:
+                    case IF:
+                    case WHILE:
+                    case PRINT:
+                    case RETURN:
+                        return;
+                }
+                advance();
+            }
+        }
 }
